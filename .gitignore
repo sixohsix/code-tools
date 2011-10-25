@@ -1,0 +1,11 @@
+*.bak
+*.pyc
+*.pyo
+*~
+.ropeproject
+.idea
+.idea/
+.DS_Store
+.project
+.coverage
+/dist
