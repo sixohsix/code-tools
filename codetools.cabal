@@ -1,0 +1,15 @@
+Name:CodeTools
+Version:0.1
+Cabal-Version:  >= 1.2
+License:MIT
+Author:Mike Verdone
+Homepage:
+Category:
+Synopsis:Random scripts to make life easier
+Build-Type: Simple
+
+Executable reorder_imports
+  Main-Is: ReorderImports.hs
+  Hs-Source-Dirs: src
+  Build-Depends:
+    base >= 4
