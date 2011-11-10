@@ -41,13 +41,6 @@ comparePackageOrder l r =
          else compare mL mR
     otherwise -> compare mModL mModR
 
-
-reorderImports :: String -> String
-reorderImports imports = 
-  let importLines = stitchImportLines (lines imports)
-  in
-    unlines (sortBy comparePackageOrder importLines)
-
 stitchImportLines :: [String] -> [String]
 stitchImportLines lines = filter ("" /=) (stitchImportLines' lines "" [])
 
@@ -57,6 +50,12 @@ stitchImportLines' (x:xs) cur acc =
   if any (\lineStart -> isPrefixOf lineStart x) ["import", "from"]
   then stitchImportLines' xs x (acc ++ [cur])
   else stitchImportLines' xs (cur ++ "\n" ++ x) acc
+
+reorderImports :: String -> String
+reorderImports imports = 
+  let importLines = stitchImportLines (lines imports)
+  in
+    unlines (sortBy comparePackageOrder importLines)
 
 main :: IO ()
 main = interact reorderImports
