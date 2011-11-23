@@ -13,3 +13,15 @@ Executable reorder_imports
   Hs-Source-Dirs: src
   Build-Depends:
     base >= 4
+
+Executable indent
+  Main-Is: Indent.hs
+  Hs-Source-Dirs: src
+  Build-Depends:
+    base >= 4
+
+Executable dedent
+  Main-Is: Dedent.hs
+  Hs-Source-Dirs: src
+  Build-Depends:
+    base >= 4

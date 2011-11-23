@@ -1,6 +1,5 @@
 
-import Data.List (sortBy)
-import Data.List (isPrefixOf, elemIndex)
+import Data.List (sortBy, isPrefixOf, elemIndex)
 
 
 pkgClasses :: [String]
@@ -28,7 +27,7 @@ comparePackageOrder l r =
       mModL = mod l
       mModR = mod r
   in case (mModL, mModR) of
-    (Just mL, Just mR) -> 
+    (Just mL, Just mR) ->
       let package m = case elemIndex '.' m of
             Just x -> fst (splitAt x m)
             Nothing -> m
@@ -41,8 +40,14 @@ comparePackageOrder l r =
          else compare mL mR
     otherwise -> compare mModL mModR
 
+
+{-|
+Given a list of lines, this stitches them back together so that
+imports that span multiple lines don't get chopped up.
+-}
 stitchImportLines :: [String] -> [String]
 stitchImportLines lines = filter ("" /=) (stitchImportLines' lines "" [])
+
 
 stitchImportLines' :: [String] -> String -> [String] -> [String]
 stitchImportLines' [] cur acc = acc ++ [cur]
@@ -52,7 +57,7 @@ stitchImportLines' (x:xs) cur acc =
   else stitchImportLines' xs (cur ++ "\n" ++ x) acc
 
 reorderImports :: String -> String
-reorderImports imports = 
+reorderImports imports =
   let importLines = stitchImportLines (lines imports)
   in
     unlines (sortBy comparePackageOrder importLines)
