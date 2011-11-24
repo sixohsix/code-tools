@@ -1,12 +1,16 @@
 
+safeToDedent :: String -> Bool
+safeToDedent l = all (' ' ==) (take 4 l)
+
+
 dedent4 :: String -> String
 dedent4 s =
   let
     inputLines = lines s
-    safeToDedent = all (\l -> "    " == (take 4 l)) inputLines
-    outputLines = if safeToDedent
-       then map (drop 4) inputLines
-       else inputLines
+    outputLines =
+      if all safeToDedent inputLines
+      then map (drop 4) inputLines
+      else inputLines
   in unlines outputLines
 
 
