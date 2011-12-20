@@ -1,47 +1,30 @@
 
+import Control.Monad.Error
 import Control.Monad (when)
-import Crypto.Random (newGenIO)
+import Crypto.Random (newGenIO, SystemRandom)
 import qualified Network.Socket as NetSock
-import Network.TLS (client, defaultParams)
-import System.IO (IOMode (ReadWriteMode))
+import Network.HaskellNet.IMAP (IMAPConnection, connectStream)
+import Network.TLS (client, defaultParams, TLSCtx, ctxConnection)
+import Network.TLS.Extra (connectionClient)
+import System.IO (IOMode (ReadWriteMode), Handle)
 import System.Environment (getArgs)
 
 usage :: String
 usage = "USAGE:\n  imap_killa server"
 
-
-connectSockHandle server service = do
-  ai <- NetSock.getAddrInfo Nothing (Just server) (Just service)
-  _ <- if null ai
-    then fail "Failed to look up address."
-    else return ()
-  addrI <- return $ head ai
-  sock <- NetSock.socket
-          (NetSock.addrFamily addrI)
-          NetSock.Stream
-          NetSock.defaultProtocol
-  _ <- NetSock.connect sock (NetSock.addrAddress addrI)
-  NetSock.socketToHandle sock ReadWriteMode
-
-
+connectImapTls :: String -> IO (IMAPConnection Handle)
 connectImapTls server = do
-  handle <- connectSockHandle server "imaps"
-  g <- newGenIO
-  client defaultParams g handle
+  g <- newGenIO :: IO SystemRandom
+  tlsConn <- connectionClient server "993" defaultParams g
+  connectStream $ ctxConnection tlsConn
 
-
-doOrDie :: IO (Either String ())
-doOrDie = do
-  args <- getArgs
-  _ <- return $ when (null args) (Left usage)
-  imap <- let server = (args !! 0)
-          in connectImapTls server
-  return $ Right ()
-
+connectHttps server = do
+  g <- newGenIO :: IO SystemRandom
+  connectionClient server "443" defaultParams g
 
 main :: IO ()
 main = do
-  ret <- doOrDie
-  case ret of
-    Left err -> (putStrLn err)
-    Right () -> return ()
+  args <- getArgs
+  imap <- let server = (args !! 0)
+          in connectImapTls server
+  return ()
