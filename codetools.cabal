@@ -1,6 +1,6 @@
 Name:CodeTools
 Version:0.1
-Cabal-Version:  >= 1.2
+Cabal-Version: >= 1.2
 License:MIT
 Author:Mike Verdone
 Homepage:
@@ -13,6 +13,13 @@ Executable reorder_imports
   Hs-Source-Dirs: src
   Build-Depends:
     base >= 4
+
+Executable reorder_imports2
+  Main-Is: ReorderImports2.hs
+  Hs-Source-Dirs: src
+  Build-Depends:
+    base >= 4,
+    missingh >= 1.1, < 1.2
 
 Executable indent
   Main-Is: Indent.hs

@@ -1,4 +1,7 @@
 
+import Data.String.Utils (join)
+
+
 data PyToken = OpenBrace
              | CloseBrace
              | Star
@@ -40,6 +43,8 @@ tokenize (x:xs)
 
 parseError = error "Parse error"
 
+lineTooLong = (<=) 80 . length
+
 type PyModuleName = String
 data PyModule = PyModuleAs PyModuleName String
               | PyModule PyModuleName
@@ -47,6 +52,31 @@ data PyModule = PyModuleAs PyModuleName String
 data PyImportStmt = StmtImport [PyModule]
                   | StmtFrom PyModuleName [PyModule]
                     deriving (Show)
+
+class ShowAsPython a where
+  showAsPython :: a -> String
+
+instance ShowAsPython PyModule where
+  showAsPython pm = case pm of
+    (PyModuleAs pyMod pyModName) -> pyMod ++ " as " ++ pyModName
+    (PyModule pyMod) -> pyMod
+
+instance ShowAsPython PyImportStmt where
+  showAsPython pis =
+    let modulesStr = map showAsPython
+        modStr = \modules -> join ", " (modulesStr modules)
+        modStrBraces = \modules ->
+          "(" ++ (join ",\n    " (modulesStr modules)) ++ ",\n    )"
+    in case pis of
+      (StmtImport modules) ->
+        let oneLine = "import " ++ modStr modules
+            multiLine = "import " ++ modStrBraces modules
+        in if lineTooLong oneLine then multiLine else oneLine
+      (StmtFrom mod modules) ->
+        let oneLine = "from " ++ mod ++ " import " ++ modStr modules
+            multiLine = "from " ++ mod ++ " import " ++ modStrBraces modules
+        in if lineTooLong oneLine then multiLine else oneLine
+
 consume tTypes [] = []
 consume tTypes (t:tokens)
   | any ((==) t) tTypes = consume tTypes tokens
@@ -66,21 +96,30 @@ parseTop [] = []
 parseTop tokens = case (consumeWN tokens) of
   [] -> []
   (t:ts) -> case t of
-    Import -> let (imp, rest) = parseImport ts
-              in [imp] ++ parseTop rest
---    From -> let (imp, rest) = parseFrom ts
---            in [imp] ++ parseTop rest
+    Import -> let (mods, rest) = parseImport ts
+              in [StmtImport mods] ++ parseTop rest
+    From -> let (mod, mods, rest) = parseFrom ts
+            in [StmtFrom mod mods] ++ parseTop rest
     otherwise -> parseError
 
 parseImport [] = parseError
 parseImport tokens = case (consume [Whitespace] tokens) of
   [] -> parseError
   (t:ts) -> case t of
---    OpenBrace -> let (modules, rest) = parseModulesInBraces ts
---                 in (StmtImport modules, rest)
-    Str str -> let (modules, rest) = (parseModules (t:ts))
-               in (StmtImport modules, rest)
+    OpenBrace -> let (modules, rest) = parseModulesBraces ts
+                 in case rest of
+                   (CloseBrace:restAfter) -> (modules, restAfter)
+                   otherwise -> parseError
+    Str str -> let (modules, rest) = (parseModulesReg tokens)
+               in (modules, rest)
     otherwise -> parseError
+
+parseFrom [] = parseError
+parseFrom tokens = case ignoreW tokens of
+  (Str s0 : Import : ts) ->
+    let (mods, rest) = parseImport ts
+    in (s0, mods, rest)
+  otherwise -> parseError
 
 commaContinue pf tokens = case tokens of
   (t:ts) -> case t of
@@ -88,15 +127,27 @@ commaContinue pf tokens = case tokens of
     otherwise -> ([], tokens)
   otherwise -> ([], tokens)
 
-parseModules [] = parseError
-parseModules tokens =
-  let tokens' = ignoreW tokens in case tokens' of
+parseModulesReg = parseModules ignoreW
+parseModulesBraces = parseModules ignoreWN
+
+parseModules _ [] = parseError
+parseModules ignore tokens =
+  let tokens' = ignore tokens
+      parseMore = commaContinue (parseModules ignore)
+  in case tokens' of
     (Str s0 : As : Str s1 : ts) ->
-      let (modules, rest) = commaContinue parseModules ts
+      let (modules, rest) = parseMore ts
       in ([PyModuleAs s0 s1] ++ modules, rest)
     (Str s0 : ts) ->
-      let (modules, rest) = commaContinue parseModules ts
+      let (modules, rest) = parseMore ts
       in ([PyModule s0] ++ modules, rest)
     otherwise -> parseError
 
+showStmtListAsPython :: ShowAsPython a => [a] -> String
+showStmtListAsPython = join "\n" . map showAsPython
+
 lexParseImports imports = parseTop (tokenize imports)
+
+reformat = showStmtListAsPython . lexParseImports
+
+main = interact reformat
