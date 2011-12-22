@@ -19,7 +19,7 @@ Executable reorder_imports2
   Hs-Source-Dirs: src
   Build-Depends:
     base >= 4,
-    missingh >= 1.1, < 1.2
+    MissingH >= 1.1 && < 1.2
 
 Executable indent
   Main-Is: Indent.hs

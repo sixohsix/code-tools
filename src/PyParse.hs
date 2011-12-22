@@ -143,6 +143,7 @@ parseModules ignore tokens =
     (Str s0 : ts) ->
       let (modules, rest) = parseMore ts
       in ([PyModule s0] ++ modules, rest)
+    t@(CloseBrace:_) -> ([], t)
     otherwise -> parseError
 
 showStmtListAsPython :: ShowAsPython a => [a] -> String
