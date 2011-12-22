@@ -14,12 +14,18 @@ data PyToken = OpenBrace
              | From
              | As
              | Newline
+             | Hash String
                deriving (Show, Eq)
 
 eatWhitespaceChars "" = ""
 eatWhitespaceChars (x:xs)
   | (x == ' ') || (x == '\t') = eatWhitespaceChars xs
   | otherwise = (x:xs)
+
+concatUntilNewline acc [] = (acc, [])
+concatUntilNewline acc (t:ts) = case t of
+  '\n' -> (acc, ts)
+  otherwise -> concatUntilNewline (acc ++ [t]) ts
 
 lexStr accStr "" = (accStr, "")
 lexStr accStr (x:xs)
@@ -40,6 +46,8 @@ tokenize (x:xs)
   | x == ',' = [Comma] ++ tokenize xs
   | x == '\n' = [Newline] ++ tokenize xs
   | x == ' ' = [Whitespace] ++ tokenize (eatWhitespaceChars xs)
+  | x == '#' = let (commentStr, rest) = concatUntilNewline "" xs
+               in [Hash commentStr] ++ tokenize rest
   | otherwise = let (str, rest) = lexStr "" (x:xs)
                 in [tokenizeStr str] ++ tokenize rest
 
@@ -53,7 +61,9 @@ data PyModule = PyModuleAs PyModuleName String
                 deriving (Show, Eq, Ord)
 data PyImportStmt = StmtImport [PyModule]
                   | StmtFrom PyModuleName [PyModule]
-                    deriving (Show)
+                  | StmtComment String
+                  | StmtSpace
+                    deriving (Show, Eq)
 
 class ShowAsPython a where
   showAsPython :: a -> String
@@ -68,7 +78,7 @@ instance ShowAsPython PyImportStmt where
     let modulesStr = map showAsPython
         modStr = \modules -> join ", " (modulesStr modules)
         modStrBraces = \modules ->
-          "(" ++ (join ",\n    " (modulesStr modules)) ++ ",\n    )"
+          "(\n    " ++ (join ",\n    " (modulesStr modules)) ++ ",\n    )"
     in case pis of
       (StmtImport modules) ->
         let oneLine = "import " ++ modStr modules
@@ -78,6 +88,8 @@ instance ShowAsPython PyImportStmt where
         let oneLine = "from " ++ mod ++ " import " ++ modStr modules
             multiLine = "from " ++ mod ++ " import " ++ modStrBraces modules
         in if lineTooLong oneLine then multiLine else oneLine
+      (StmtComment s) -> "# " ++ s
+      (StmtSpace) -> "\n"
 
 consume tTypes [] = []
 consume tTypes (t:tokens)
@@ -102,6 +114,7 @@ parseTop tokens = case (consumeWN tokens) of
               in [StmtImport mods] ++ parseTop rest
     From -> let (mod, mods, rest) = parseFrom ts
             in [StmtFrom mod mods] ++ parseTop rest
+    Hash str -> [StmtComment str] ++ parseTop ts
     otherwise -> parseError
 
 parseImport [] = parseError
