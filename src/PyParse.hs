@@ -53,7 +53,7 @@ tokenize (x:xs)
 
 parseError = error "Parse error"
 
-lineTooLong = (<=) 80 . length
+lineTooLong = (<=) 72 . length
 
 type PyModuleName = String
 data PyModule = PyModuleAs PyModuleName String
