@@ -1,7 +1,14 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 
 module PyParse where
 
 import Data.String.Utils (join)
+import Control.Exception (throw, Exception)
+import Data.Typeable (Typeable)
+
+data ParseError = ParseError
+                deriving (Show, Typeable)
+instance Exception ParseError
 
 
 data PyToken = OpenBrace
@@ -51,7 +58,7 @@ tokenize (x:xs)
   | otherwise = let (str, rest) = lexStr "" (x:xs)
                 in [tokenizeStr str] ++ tokenize rest
 
-parseError = error "Parse error"
+parseError = throw ParseError
 
 lineTooLong = (<=) 72 . length
 
@@ -94,7 +101,7 @@ instance ShowAsPython PyImportStmt where
 consume tTypes [] = []
 consume tTypes (t:tokens)
   | any ((==) t) tTypes = consume tTypes tokens
-  | otherwise = t:tokens
+  | otherwise = t:(consume tTypes tokens)
 
 consumeWN = consume [Whitespace, Newline]
 

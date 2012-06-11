@@ -1,12 +1,14 @@
-
 module Main where
+
+import qualified Control.Exception as CE
 
 import Data.List (sort, sortBy, isPrefixOf, elemIndex)
 import PyParse (
   showStmtListAsPython,
   lexParseImports,
   PyImportStmt (StmtFrom, StmtImport, StmtComment),
-  PyModule (PyModule, PyModuleAs))
+  PyModule (PyModule, PyModuleAs),
+  ParseError)
 
 pkgClasses :: [String]
 pkgClasses = [ "__future__"
@@ -72,9 +74,12 @@ reformat = showStmtListAsPython
 
 safeInteract f = do
   input <- getContents
-  output <- (return $ f input) `catch` (
-    \e -> return ("# Parse error. Didn't work.\n\n" ++ input)
-    )
+  output <- CE.catch (CE.evaluate $ f input) handler
+  output <- return $ if ("" == output)
+                     then (input ++ "\n# Parse error!\n")
+                     else output
   putStr output
+    where handler :: ParseError -> IO String
+          handler e = return ""
 
 main = safeInteract reformat
