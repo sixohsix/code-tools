@@ -3,6 +3,7 @@ module Main where
 import qualified Control.Exception as CE
 
 import Data.List (sort, sortBy, isPrefixOf, elemIndex)
+import Data.Function (on)
 import PyParse (
   showStmtListAsPython,
   lexParseImports,
@@ -42,15 +43,8 @@ reorderFromImports (StmtFrom mod mods) = (StmtFrom mod (sort mods))
 reorderFromImports o = o
 
 sortImports = sortBy (
-  \a b -> let pa = getPackage a
-              pb = getPackage b
-              pkgClsCompare = compare
-                              (pkgClassIdxOf pa)
-                              (pkgClassIdxOf pb)
-          in case pkgClsCompare of
-            EQ -> compare pa pb
-            otherwise -> pkgClsCompare
-  )
+  compare `on` (
+     \a -> (pkgClassIdxOf $ getPackage a, getPackage a)))
 
 isComment c = case c of
   StmtComment _ -> True
