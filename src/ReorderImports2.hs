@@ -66,14 +66,14 @@ reformat = showStmtListAsPython
            . concat . map splitImports
            . lexParseImports
 
+catchParseErr :: IO String -> (ParseError -> IO String) -> IO String
+catchParseErr = CE.catch
+
 safeInteract f = do
   input <- getContents
-  output <- CE.catch (CE.evaluate $ f input) handler
-  output <- return $ if ("" == output)
-                     then (input ++ "\n# Parse error!\n")
-                     else output
-  putStr output
-    where handler :: ParseError -> IO String
-          handler e = return ""
+  output <- catchParseErr
+              (CE.evaluate $ f input)
+              (\e -> return (input ++ "\n# !!! Parse error!\n"))
+  putStrLn output
 
 main = safeInteract reformat
