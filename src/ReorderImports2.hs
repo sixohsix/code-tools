@@ -27,10 +27,10 @@ pkgClassIdxOf pkg = case elemIndex pkg pkgClasses of
     Just star -> star
     Nothing -> 0
 
-takeUntilDot = takeWhile (not . ((==) '.'))
+dropDots = dropWhile (== '.')
 
-getPackage (StmtFrom name _) = takeUntilDot name
-getPackage (StmtImport (mod:_)) = takeUntilDot $ getMod mod
+getPackage (StmtFrom name _) = dropDots name
+getPackage (StmtImport (mod:_)) = dropDots $ getMod mod
 getPackage other = undefined
 
 getMod (PyModule m) = m
@@ -53,9 +53,10 @@ isComment c = case c of
 stripComments = filter (not . isComment)
 
 killDupes :: [PyImportStmt] -> [PyImportStmt]
-killDupes (s0:s1:ss) = if (s0 == s1)
-                         then s0:(killDupes ss)
-                         else s0:(killDupes $ s1:ss)
+killDupes (s0:s1:ss) =
+  if (s0 == s1)
+  then s0:(killDupes ss)
+  else s0:(killDupes $ s1:ss)
 killDupes ss = ss
 
 reformat = showStmtListAsPython
