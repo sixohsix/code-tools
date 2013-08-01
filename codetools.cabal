@@ -1,5 +1,5 @@
 Name:CodeTools
-Version:0.1
+Version:1.0
 Cabal-Version: >= 1.2
 License:MIT
 Author:Mike Verdone
@@ -20,6 +20,13 @@ Executable reorder_imports2
   Build-Depends:
     base >= 4,
     MissingH >= 1.1 && < 1.2
+
+Executable pyalphabetize
+  Main-Is: PyAlphabetize.hs
+  Hs-Source-Dirs: src
+  Build-Depends:
+    base >= 4,
+    language-python >= 0.4.0
 
 Executable indent
   Main-Is: Indent.hs
