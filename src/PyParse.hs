@@ -2,14 +2,22 @@
 
 module PyParse where
 
-import Data.String.Utils (join)
 import Control.Exception (throw, Exception)
 import Data.Typeable (Typeable)
+import Data.List (foldl')
 
 data ParseError = ParseError
                 deriving (Show, Typeable)
 instance Exception ParseError
 
+
+join :: String -> [String] -> String
+join sep strs =
+  let joinf acc s =
+        if null acc
+        then s
+        else acc ++ sep ++ s
+  in foldl' joinf "" strs
 
 data PyToken = OpenBrace
              | CloseBrace

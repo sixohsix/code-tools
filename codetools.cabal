@@ -18,8 +18,7 @@ Executable reorder_imports2
   Main-Is: ReorderImports2.hs
   Hs-Source-Dirs: src
   Build-Depends:
-    base >= 4,
-    MissingH >= 1.1 && < 1.2
+    base >= 4
 
 Executable pyalphabetize
   Main-Is: PyAlphabetize.hs
