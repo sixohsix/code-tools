@@ -29,9 +29,14 @@ pkgClassIdxOf pkg = case elemIndex pkg pkgClasses of
 
 dropDots = dropWhile (== '.')
 
-getPackage (StmtFrom name _) = dropDots name
-getPackage (StmtImport (mod:_)) = dropDots $ getMod mod
-getPackage other = undefined
+untilDot = takeWhile (/= '.')
+
+getPackageStr (StmtFrom name _) = name
+getPackageStr (StmtImport (mod:_)) = getMod mod
+getPackageStr other = undefined
+
+getPackageClass = untilDot . getPackageStr
+getPackage = dropDots . getPackageStr
 
 getMod (PyModule m) = m
 getMod (PyModuleAs m _) = m
@@ -44,7 +49,7 @@ reorderFromImports o = o
 
 sortImports = sortBy (
   compare `on` (
-     \a -> (pkgClassIdxOf $ getPackage a, getPackage a)))
+     \a -> (pkgClassIdxOf $ getPackageClass a, getPackage a)))
 
 isComment c = case c of
   StmtComment _ -> True
